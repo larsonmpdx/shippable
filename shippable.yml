@@ -1,0 +1,43 @@
+language: c
+
+compiler:
+  - gcc
+
+build:
+  ci:
+    - sudo apt-get install can-utils
+    - ./run_tests.sh
+
+jobs:
+  - name: shippable_runSh
+    type: runSh
+    steps:
+      - IN: shippable_gitRepo
+      - TASK:
+          name: setup_shippable_host
+          runtime:
+            container: false # run on host
+          script:
+            - sudo modprobe can
+            - sudo modprobe can_raw
+            - sudo modprobe vcan
+            - sudo ip link add dev vcan0 type vcan || true
+            - sudo ip link set up vcan0 || true
+      - OUT: shippable_ciRepo
+        replicate: shippable_gitRepo
+  - name: shippable_runCI
+    type: runCI
+    steps:
+      - IN: shippable_ciRepo
+
+resources:
+  - name: shippable_gitRepo
+    type: gitRepo
+    integration: github
+    versionTemplate:
+      sourceName: larsonmpdx/shippable
+      buildOnCommit: true
+      buildOnPullRequest: true
+      buildOnPullRequestClose: false
+      buildOnRelease: false
+      buildOnTagPush: false
